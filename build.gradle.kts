@@ -11,7 +11,7 @@ plugins {
   id("com.diffplug.spotless") version "7.0.2"
   id("org.jetbrains.dokka") version "2.0.0"
   id("org.jetbrains.kotlinx.kover") version "0.9.1"
-  id("org.jreleaser") version "1.16.0"
+  id("org.jreleaser") version "1.15.0"
 }
 
 group = "io.github.ivsokol"
@@ -73,6 +73,10 @@ jreleaser {
     links {
       homepage = "https://ivsokol.github.io/spider"
       license = "https://opensource.org/licenses/Apache-2.0"
+    }
+    java {
+      groupId = "io.github.ivsokol"
+      artifactId = "spider"
     }
     signing {
       setActive("ALWAYS")
