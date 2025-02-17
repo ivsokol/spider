@@ -202,7 +202,7 @@ Singleton object for managing the `DependencyInjection` instance on application 
 
 ## Examples
 
-More examples can be found in the [test](src/test/kotlin) folder.
+More examples can be found in the [test](src/test/kotlin/io/github/ivsokol/spider) folder.
 
 ## License
 
