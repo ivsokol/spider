@@ -2,13 +2,13 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  val kotlinVersion = "2.1.10"
+  val kotlinVersion = "2.2.0"
 
   kotlin("jvm") version kotlinVersion
   `java-library`
   `maven-publish`
 
-  id("com.diffplug.spotless") version "7.0.2"
+  id("com.diffplug.spotless") version "7.1.0"
   id("org.jetbrains.dokka") version "2.0.0"
   id("org.jetbrains.kotlinx.kover") version "0.9.1"
   id("org.jreleaser") version "1.15.0"
@@ -16,7 +16,7 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
   mavenLocal()
@@ -24,10 +24,10 @@ repositories {
 }
 
 dependencies {
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-  implementation("org.slf4j:slf4j-api:2.0.16")
-  implementation("ch.qos.logback:logback-classic:1.5.16")
-  implementation("org.fusesource.jansi:jansi:2.4.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+  implementation("org.slf4j:slf4j-api:2.0.17")
+  implementation("ch.qos.logback:logback-classic:1.5.18")
+  implementation("org.fusesource.jansi:jansi:2.4.2")
 
   testImplementation("io.kotest:kotest-runner-junit5:${project.property("kotestVersion")}")
   testImplementation("io.kotest:kotest-assertions-json-jvm:${project.property("kotestVersion")}")
