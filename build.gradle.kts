@@ -16,7 +16,7 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.1.0"
+version = "1.1.1"
 
 repositories {
   mavenLocal()
@@ -54,7 +54,7 @@ tasks.register<Jar>("dokkaJavadocJar") {
 
 project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
 
-project.tasks.getByName("javadoc").dependsOn("dokkaJavadoc")
+project.tasks.getByName("dokkaJavadocJar").dependsOn("javadoc")
 
 project.tasks.getByName("jreleaserFullRelease").dependsOn("publish")
 
