@@ -33,7 +33,7 @@ class RegisterBuilder<T : Any> {
   inline fun <reified T : Any> build(
       noinline sameProvider: suspend (di: DependencyInjection) -> T
   ): DependencyInjectionBuilder.Registration<T> =
-      DependencyInjectionBuilder.Registration<T>(
+      DependencyInjectionBuilder.Registration(
           fromClass<T>(name, intf),
           createdAtStart,
           isLocked,

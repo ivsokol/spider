@@ -1,13 +1,15 @@
 package io.github.ivsokol.spider
 
+import java.time.LocalDateTime
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class DependencyInjection {
-  private val instances = mutableMapOf<String, Any>()
+  private val instances = mutableMapOf<String, Pair<Any, LocalDateTime>>()
   private val registry = mutableMapOf<String, ServiceMetadata>()
   private var isStarted: Boolean = false
   private var isDILocked: Boolean = false
-  val logger = LoggerFactory.getLogger(DependencyInjection::class.java)
+  val logger: Logger = LoggerFactory.getLogger(DependencyInjection::class.java)
 
   /**
    * Register a class with the dependency injection container. Invoking this method only registers a
@@ -73,12 +75,14 @@ class DependencyInjection {
    */
   suspend fun destroy() {
     logger.debug("Destroying all instances")
-    instances.forEach { (_, instance) ->
-      if (instance is Destroyable) {
-        logger.debug("Destroying instance {}", instance)
-        instance.destroy()
-      }
-    }
+    instances.values
+        .sortedByDescending { it.second }
+        .forEach { (obj, _) ->
+          if (obj is Destroyable) {
+            logger.debug("Destroying instance {}", obj)
+            obj.destroy()
+          }
+        }
     instances.clear()
     logger.debug("All instances destroyed")
   }
@@ -209,7 +213,7 @@ class DependencyInjection {
         logger.debug("Creating at start instance {} of class {}", key, metadata.className)
         try {
           val instance = metadata.provider.invoke(this)
-          instances[key] = instance
+          instances[key] = instance to LocalDateTime.now()
         } catch (e: Exception) {
           logger.error("Error creating instance {} of class {}", key, metadata.className, e)
           error(
@@ -330,7 +334,7 @@ class DependencyInjection {
     // if already created, return existing instance
     if (instances.containsKey(metadata.name)) {
       logger.debug("Returning existing instance {} of class {}", metadata.name, metadata.className)
-      return instances[metadata.name]!!
+      return instances[metadata.name]!!.first
     }
 
     logger.debug("Creating lazily instance {} of class {}", metadata.name, metadata.className)
@@ -343,7 +347,7 @@ class DependencyInjection {
           error(
               "Error creating instance ${metadata.name} of class ${metadata.className} with error: ${e.message}")
         }
-    instances[metadata.name] = instance
+    instances[metadata.name] = instance to LocalDateTime.now()
     return instance
   }
 }
