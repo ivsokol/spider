@@ -55,12 +55,30 @@ object SpiderContainer {
   suspend inline fun <reified T : Any> inject(): T = spider().resolve<T>()
 
   /**
+   * Injects a started dependency by its class type.
+   *
+   * @param <T> the type of the dependency
+   * @return the injected dependency
+   * @throws IllegalStateException if the dependency is not started
+   */
+  inline fun <reified T : Any> injectStarted(): T = spider().resolveStarted<T>()
+
+  /**
    * Injects all dependencies by their class type.
    *
    * @param <T> the type of the dependencies
    * @return the list of injected dependencies
    */
   suspend inline fun <reified T : Any> injectAll(): List<T> = spider().resolveAll<T>()
+
+  /**
+   * Injects all started dependencies by their class type.
+   *
+   * @param <T> the type of the dependencies
+   * @return the list of injected dependencies
+   * @throws IllegalStateException if any dependency is not started
+   */
+  inline fun <reified T : Any> injectAllStarted(): List<T> = spider().resolveAllStarted<T>()
 
   /**
    * Injects a dependency by its name.
@@ -70,6 +88,17 @@ object SpiderContainer {
    * @return the injected dependency
    */
   suspend inline fun <reified T : Any> inject(name: String): T = spider().resolveByName<T>(name)
+
+  /**
+   * Injects a started dependency by its name.
+   *
+   * @param name the name of the dependency to inject
+   * @param <T> the type of the dependency
+   * @return the injected dependency
+   * @throws IllegalStateException if the dependency is not started
+   */
+  inline fun <reified T : Any> injectStarted(name: String): T =
+      spider().resolveStartedByName<T>(name)
 
   /**
    * Retrieves the DependencyInjection instance.

@@ -108,6 +108,26 @@ class DependencyInjection {
   }
 
   /**
+   * Resolve a started class by name from the dependency injection container.
+   *
+   * @param name Name of the class to resolve
+   * @return Instance of the resolved class
+   * @throws IllegalStateException if the class is not found or not started
+   * @throws IllegalArgumentException if the class cannot be cast to the requested type
+   */
+  inline fun <reified T : Any> resolveStartedByName(name: String): T {
+    logger.debug("Resolving started class {} by name", T::class.java.name)
+    val metadata = this.registry()[name.trim()]
+    checkNotNull(metadata) { "Class not found for $name" }
+
+    val instance =
+        getStartedInstanceFromMetadata(metadata) as? T
+            ?: throw IllegalArgumentException(
+                "Class cast to ${T::class.java.name} failed for $name")
+    return instance
+  }
+
+  /**
    * Resolve a class by name from the dependency injection container while checking for circular
    * dependencies.
    *
@@ -158,6 +178,32 @@ class DependencyInjection {
   }
 
   /**
+   * Resolve a started class by class definition from the dependency injection container.
+   *
+   * @return Instance of the resolved class
+   * @throws IllegalStateException if the class is not found or not started
+   * @throws IllegalArgumentException if the class cannot be cast to the requested type
+   */
+  inline fun <reified T : Any> resolveStarted(): T {
+    logger.debug("Resolving class {} by class definition", T::class.java.name)
+    val definition =
+        registry()
+            .filter {
+              it.key == T::class.java.name ||
+                  it.value.name == T::class.java.name ||
+                  it.value.implements.name == T::class.java.name
+            }
+            .values
+            .minByOrNull { it.priority }
+
+    check(definition != null) { "Class definition not found for ${T::class.java.name}" }
+    val instance =
+        getStartedInstanceFromMetadata(definition) as? T
+            ?: throw IllegalArgumentException("Class cast to ${T::class.java.name} failed")
+    return instance
+  }
+
+  /**
    * Resolve a class by class definition from the dependency injection container while checking for
    * circular dependencies.
    *
@@ -197,6 +243,31 @@ class DependencyInjection {
     }
 
     return beans.map { getInstanceFromMetadata(it) as T }
+  }
+
+  /**
+   * Resolve all started classes by class definition (usually an interface) from the dependency
+   * injection container. It will also return empty list if no classes are found.
+   *
+   * @return List of instances of the resolved class
+   */
+  inline fun <reified T : Any> resolveAllStarted(): List<T> {
+    logger.debug("Resolving all classes {} by class or interface definition", T::class.java.name)
+    val beans =
+        registry()
+            .filter {
+              it.key == T::class.java.name ||
+                  it.value.name == T::class.java.name ||
+                  it.value.implements.name == T::class.java.name
+            }
+            .values
+            .sortedBy { it.priority }
+
+    if (beans.isEmpty()) {
+      return emptyList()
+    }
+
+    return beans.map { getStartedInstanceFromMetadata(it) as T }
   }
 
   /**
@@ -349,5 +420,23 @@ class DependencyInjection {
         }
     instances[metadata.name] = instance to LocalDateTime.now()
     return instance
+  }
+
+  /**
+   * Retrieves an existing instance from the metadata. If the instance has not been created
+   * (started), it throws an error.
+   *
+   * @param metadata The metadata of the class to retrieve
+   * @return The existing instance of the class
+   * @throws IllegalStateException if the instance is not started
+   */
+  fun getStartedInstanceFromMetadata(metadata: ServiceMetadata): Any {
+    // if already created, return existing instance
+    if (instances.containsKey(metadata.name)) {
+      logger.debug("Returning existing instance {} of class {}", metadata.name, metadata.className)
+      return instances[metadata.name]!!.first
+    }
+
+    error("Instance ${metadata.name} of class ${metadata.className} is not started.")
   }
 }

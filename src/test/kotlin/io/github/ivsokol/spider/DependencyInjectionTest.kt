@@ -746,4 +746,104 @@ class DependencyInjectionTest :
               .message shouldContain "Circular dependency detected"
         }
       }
+
+      context("started resolution") {
+        test("resolveStartedByName should return instance if started") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      name = "foo"
+                      createdAtStart = true
+                      provider = { Foo("started") }
+                    }
+                  }
+                  .start()
+
+          val instance = testDI.resolveStartedByName<Foo>("foo")
+          instance.bar shouldBe "started"
+        }
+
+        test("resolveStartedByName should throw if not started") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      name = "foo"
+                      createdAtStart = false
+                      provider = { Foo("not started") }
+                    }
+                  }
+                  .start()
+
+          shouldThrow<IllegalStateException> { testDI.resolveStartedByName<Foo>("foo") }
+              .message shouldContain "is not started"
+        }
+
+        test("resolveStarted should return instance if started") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      createdAtStart = true
+                      provider = { Foo("started") }
+                    }
+                  }
+                  .start()
+
+          val instance = testDI.resolveStarted<Foo>()
+          instance.bar shouldBe "started"
+        }
+
+        test("resolveStarted should throw if not started") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      createdAtStart = false
+                      provider = { Foo("not started") }
+                    }
+                  }
+                  .start()
+
+          shouldThrow<IllegalStateException> { testDI.resolveStarted<Foo>() }.message shouldContain
+              "is not started"
+        }
+
+        test("resolveAllStarted should return all started instances") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      name = "foo1"
+                      createdAtStart = true
+                      provider = { Foo("1") }
+                    }
+                    register<Foo> {
+                      name = "foo2"
+                      createdAtStart = true
+                      provider = { Foo("2") }
+                    }
+                  }
+                  .start()
+
+          val instances = testDI.resolveAllStarted<Foo>()
+          instances.size shouldBe 2
+        }
+
+        test("resolveAllStarted should throw if one instance is not started") {
+          val testDI =
+              spiderDI {
+                    register<Foo> {
+                      name = "foo1"
+                      createdAtStart = true
+                      provider = { Foo("1") }
+                    }
+                    register<Foo> {
+                      name = "foo2"
+                      createdAtStart = false
+                      provider = { Foo("2") }
+                    }
+                  }
+                  .start()
+
+          shouldThrow<IllegalStateException> { testDI.resolveAllStarted<Foo>() }
+              .message shouldContain "is not started"
+        }
+      }
     })

@@ -41,7 +41,7 @@ class SpiderContainerTest :
       beforeTest {
         try {
           SpiderContainer.setUp(testDI)
-        } catch (ise: IllegalStateException) {
+        } catch (_: IllegalStateException) {
           // ignore
         }
       }
@@ -99,6 +99,92 @@ class SpiderContainerTest :
         val result: IFooRepo = SpiderContainer.inject("myRepo")
 
         result.getFoo().bar shouldNotBe null
+      }
+
+      "should inject started dependency by class type" {
+        val testDI4 = spiderDI {
+          register<Foo> {
+            createdAtStart = true
+            provider = { Foo("started") }
+          }
+        }
+        SpiderContainer.refresh(testDI4)
+        val result = SpiderContainer.injectStarted<Foo>()
+        result.bar shouldBe "started"
+      }
+
+      "should throw when injecting not started dependency by class type" {
+        val testDI5 = spiderDI {
+          register<Foo> {
+            createdAtStart = false
+            provider = { Foo("not started") }
+          }
+        }
+        SpiderContainer.refresh(testDI5)
+        shouldThrow<IllegalStateException> { SpiderContainer.injectStarted<Foo>() }
+            .message shouldContain "is not started"
+      }
+
+      "should inject all started dependencies by class type" {
+        val testDI6 = spiderDI {
+          register<Foo> {
+            name = "foo1"
+            createdAtStart = true
+            provider = { Foo("1") }
+          }
+          register<Foo> {
+            name = "foo2"
+            createdAtStart = true
+            provider = { Foo("2") }
+          }
+        }
+        SpiderContainer.refresh(testDI6)
+        val result = SpiderContainer.injectAllStarted<Foo>()
+        result.size shouldBe 2
+      }
+
+      "should throw when injecting all started dependencies if one is not started" {
+        val testDI7 = spiderDI {
+          register<Foo> {
+            name = "foo1"
+            createdAtStart = true
+            provider = { Foo("1") }
+          }
+          register<Foo> {
+            name = "foo2"
+            createdAtStart = false
+            provider = { Foo("2") }
+          }
+        }
+        SpiderContainer.refresh(testDI7)
+        shouldThrow<IllegalStateException> { SpiderContainer.injectAllStarted<Foo>() }
+            .message shouldContain "is not started"
+      }
+
+      "should inject started dependency by name" {
+        val testDI8 = spiderDI {
+          register<Foo> {
+            name = "foo"
+            createdAtStart = true
+            provider = { Foo("started") }
+          }
+        }
+        SpiderContainer.refresh(testDI8)
+        val result = SpiderContainer.injectStarted<Foo>("foo")
+        result.bar shouldBe "started"
+      }
+
+      "should throw when injecting not started dependency by name" {
+        val testDI9 = spiderDI {
+          register<Foo> {
+            name = "foo"
+            createdAtStart = false
+            provider = { Foo("not started") }
+          }
+        }
+        SpiderContainer.refresh(testDI9)
+        shouldThrow<IllegalStateException> { SpiderContainer.injectStarted<Foo>("foo") }
+            .message shouldContain "is not started"
       }
 
       "should retrieve service registry" {
