@@ -2,7 +2,8 @@ import java.net.HttpURLConnection
 import java.net.URI
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import kotlin.io.inputStream
+import org.jreleaser.gradle.plugin.dsl.deploy.maven.GithubMavenDeployer
+import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenCentralMavenDeployer
 
 plugins {
   val kotlinVersion = "2.2.20"
@@ -19,7 +20,7 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.2.0"
+version = "1.2.1"
 
 repositories {
   mavenLocal()
@@ -89,7 +90,7 @@ jreleaser {
     deploy {
       maven {
         mavenCentral {
-          create("maven-central") {
+          (create("maven-central") as MavenCentralMavenDeployer).apply {
             if (isArtifactPublished(
                 group.toString(), "spider", project.version.toString())) {
               logger.lifecycle(
@@ -104,7 +105,7 @@ jreleaser {
           }
         }
         github {
-          create("github") {
+          (create("github") as GithubMavenDeployer).apply {
             setActive("ALWAYS")
             stagingRepository("build/staging-deploy")
           }
@@ -185,8 +186,7 @@ fun isArtifactPublished(groupId: String, artifactId: String, version: String): B
         false
       }
     }
-  } catch (e: Exception) {
+  } catch (_: Exception) {
     false
   }
 }
-
