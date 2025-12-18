@@ -88,6 +88,19 @@ val fooInstance = di.resolveByName(Foo::class.java.name)
 val allFooInstances = di.resolveAll<IFoo>()
 ```
 
+### Resolving Started Dependencies
+
+Resolve dependencies that are already started (created) by class or name using the `resolveStarted` or `resolveStartedByName` functions. These functions are not suspending and can be used in non-coroutine contexts. However, they will throw an exception if the instance is not found or not started.
+
+```kotlin
+// by class or interface
+val fooInstance = di.resolveStarted<Foo>()
+// or by name
+val fooInstance = di.resolveStartedByName<Foo>("foo")
+// or fetch all started instances of an interface
+val allFooInstances = di.resolveAllStarted<IFoo>()
+```
+
 ### Resolving dependencies with circular dependency check
 
 Resolve dependencies with circular dependency check using the `resolveWithCheck` or `resolveByNameWithCheck` function.
@@ -194,8 +207,11 @@ Singleton object for managing the `DependencyInjection` instance on application 
 - `setUp(dependencyInjection: DependencyInjection, automaticStart: Boolean = true, automaticLock: Boolean = true)`: Sets up the `DependencyInjection` instance and starts it if `automaticStart` is true. If `automaticLock` is true, it locks the container after setup.
 - `refresh(dependencyInjection: DependencyInjection, automaticStart: Boolean = true, automaticLock: Boolean = true)`: Refreshes the `DependencyInjection` instance and starts it if `automaticStart` is true. If `automaticLock` is true, it locks the container after refresh.
 - `inject(): T` - Wrapper around `DependencyInjection.resolve()` method
+- `injectStarted(): T` - Wrapper around `DependencyInjection.resolveStarted()` method
 - `inject(name: String): T` - Wrapper around `DependencyInjection.resolveByName(name)` method
+- `injectStarted(name: String): T` - Wrapper around `DependencyInjection.resolveStartedByName(name)` method
 - `injectAll(): T` - Wrapper around `DependencyInjection.resolveAll()` method
+- `injectAllStarted(): T` - Wrapper around `DependencyInjection.resolveAllStarted()` method
 - `shutdown()` - Wrapper around `DependencyInjection.destroy()` method
 - `registry(): Map<String, ServiceMetadata>` - Returns the dependency injection registry.
 - `spider(): DependencyInjection` - Returns the `DependencyInjection` instance.
