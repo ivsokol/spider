@@ -1,5 +1,8 @@
+import java.net.HttpURLConnection
+import java.net.URI
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import kotlin.io.inputStream
 
 plugins {
   val kotlinVersion = "2.2.20"
@@ -87,7 +90,14 @@ jreleaser {
       maven {
         mavenCentral {
           create("maven-central") {
-            setActive("ALWAYS")
+            if (isArtifactPublished(
+                group.toString(), "spider", project.version.toString())) {
+              logger.lifecycle(
+                  "Artifact is already published to Maven Central. Skipping 'maven-central' deployment.")
+              setActive("NEVER")
+            } else {
+              setActive("ALWAYS")
+            }
             url = "https://central.sonatype.com/api/v1/publisher"
             stagingRepository("build/staging-deploy")
             applyMavenCentralRules = true
@@ -159,3 +169,24 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 }
 
 kover.reports.verify.rule { minBound(90) }
+
+fun isArtifactPublished(groupId: String, artifactId: String, version: String): Boolean {
+  if (version.endsWith("SNAPSHOT")) return false
+  return try {
+    val url = URI("https://central.sonatype.com/artifact/$groupId/$artifactId/$version").toURL()
+    with(url.openConnection() as HttpURLConnection) {
+      requestMethod = "GET"
+      connectTimeout = 5000
+      readTimeout = 5000
+      if (responseCode == 200) {
+        val response = inputStream.bufferedReader().use { it.readText() }
+        !response.contains("NEXT_HTTP_ERROR_FALLBACK;404")
+      } else {
+        false
+      }
+    }
+  } catch (e: Exception) {
+    false
+  }
+}
+
