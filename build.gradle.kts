@@ -91,8 +91,7 @@ jreleaser {
       maven {
         mavenCentral {
           (create("maven-central") as MavenCentralMavenDeployer).apply {
-            if (isArtifactPublished(
-                group.toString(), "spider", project.version.toString())) {
+            if (isArtifactPublished(group.toString(), "spider", project.version.toString())) {
               logger.lifecycle(
                   "Artifact is already published to Maven Central. Skipping 'maven-central' deployment.")
               setActive("NEVER")
