@@ -18,7 +18,7 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.3.3"
+version = "1.3.4"
 
 repositories {
   mavenLocal()
@@ -61,7 +61,8 @@ val dokkaJavadoc =
 
 dokka {
   dokkaPublications.named("javadoc") {
-    outputDirectory.set(layout.buildDirectory.dir("docs/javadoc"))
+    // Use a separate directory for dokka output to avoid conflicts with javadoc task
+    outputDirectory.set(layout.buildDirectory.dir("docs/dokka-javadoc"))
   }
 }
 
@@ -73,18 +74,19 @@ tasks.register<Jar>("dokkaJavadocJar") {
 
 project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
 
-project.tasks.getByName("dokkaJavadocJar").dependsOn("javadoc")
-
 java {
   withSourcesJar()
   withJavadocJar()
 }
 
-// Ensure javadocJar task depends on dokkaGeneratePublicationJavadoc
+// Ensure javadocJar task uses dokka output and has proper dependencies
 tasks.named<Jar>("javadocJar") {
   dependsOn(dokkaJavadoc)
   from(dokkaJavadoc.flatMap { it.outputDirectory })
 }
+
+// Configure mavenDokkaJavadocJar to depend on dokka task
+tasks.matching { it.name == "mavenDokkaJavadocJar" }.configureEach { dependsOn(dokkaJavadoc) }
 
 mavenPublishing {
   publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
