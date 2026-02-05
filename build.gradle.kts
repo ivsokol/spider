@@ -27,9 +27,13 @@ repositories {
 
 // Map existing JReleaser environment variables to Vanniktech plugin properties
 ext["mavenCentralUsername"] = System.getenv("MAVEN_USERNAME") ?: ""
+
 ext["mavenCentralPassword"] = System.getenv("MAVEN_PASSWORD") ?: ""
+
 ext["signingInMemoryKey"] = System.getenv("GPG_SECRET_KEY") ?: ""
+
 ext["signingInMemoryKeyId"] = System.getenv("GPG_PUBLIC_KEY")?.takeLast(8) ?: ""
+
 ext["signingInMemoryKeyPassword"] = System.getenv("GPG_PASSPHRASE") ?: ""
 
 dependencies {
@@ -70,7 +74,6 @@ tasks.register<Jar>("dokkaJavadocJar") {
 project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
 
 project.tasks.getByName("dokkaJavadocJar").dependsOn("javadoc")
-
 
 java {
   withSourcesJar()
@@ -143,7 +146,8 @@ githubRelease {
   tagName.set("v${version}")
   releaseName.set("Spider v${version}")
   targetCommitish.set("main")
-  body.set("""
+  body.set(
+      """
         ## Spider v${version}
         
         Minimal dependency injection framework for Kotlin.
@@ -161,19 +165,17 @@ githubRelease {
         ```kotlin
         implementation("io.github.ivsokol:spider:${version}")
         ```
-    """.trimIndent())
+    """
+          .trimIndent()
+  )
   overwrite.set(true)
   allowUploadToExisting.set(true)
   releaseAssets(
       tasks.named("jar").map { it.outputs.files },
       tasks.named("sourcesJar").map { it.outputs.files },
-      tasks.named("dokkaJavadocJar").map { it.outputs.files }
+      tasks.named("dokkaJavadocJar").map { it.outputs.files },
   )
 }
 
 // Ensure GitHub release task runs after build
-tasks.named("githubRelease") {
-  dependsOn("build", "sourcesJar", "dokkaJavadocJar")
-}
-
-
+tasks.named("githubRelease") { dependsOn("build", "sourcesJar", "dokkaJavadocJar") }
