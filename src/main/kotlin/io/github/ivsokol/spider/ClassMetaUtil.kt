@@ -12,7 +12,8 @@ inline fun <reified T : Any> fromClass(
     // check if class implements interface
     if (intf.isAssignableFrom(T::class.java).not()) {
       throw IllegalArgumentException(
-          "Class ${T::class.java.name} does not implement interface ${intf.name}")
+          "Class ${T::class.java.name} does not implement interface ${intf.name}"
+      )
     }
   }
   return ClassMeta(key, className, clazz)

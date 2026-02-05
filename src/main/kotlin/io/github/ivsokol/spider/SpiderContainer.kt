@@ -19,7 +19,7 @@ object SpiderContainer {
   suspend fun setUp(
       dependencyInjection: DependencyInjection,
       automaticStart: Boolean = true,
-      automaticLock: Boolean = true
+      automaticLock: Boolean = true,
   ) {
     check(di == null) { "DependencyInjection instance already set up" }
     if (automaticStart) dependencyInjection.start()
@@ -38,7 +38,7 @@ object SpiderContainer {
   suspend fun refresh(
       dependencyInjection: DependencyInjection,
       automaticStart: Boolean = true,
-      automaticLock: Boolean = true
+      automaticLock: Boolean = true,
   ) {
     checkNotNull(di) { "DependencyInjection instance not set up" }
     if (automaticStart) dependencyInjection.start()

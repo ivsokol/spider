@@ -1,16 +1,15 @@
 package io.github.ivsokol.spider
 
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 
-@OptIn(ExperimentalKotest::class)
 class SpiderContainerTest :
     StringSpec({
       val testDI = spiderDI {
@@ -30,12 +29,13 @@ class SpiderContainerTest :
             FooService(
                 foo = di.resolveByName(Foo::class.java.name),
                 fooRepo = di.resolve(),
-                value = "value")
+                value = "value",
+            )
           }
         }
       }
 
-      concurrency = 1
+      testExecutionMode = TestExecutionMode.Sequential
       isolationMode = IsolationMode.InstancePerLeaf
 
       beforeTest {

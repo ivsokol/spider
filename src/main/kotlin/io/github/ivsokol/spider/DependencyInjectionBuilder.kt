@@ -34,7 +34,7 @@ class DependencyInjectionBuilder {
       val instanceType: InstanceType,
       val dependencies: List<String>,
       val priority: Int,
-      val provider: suspend (di: DependencyInjection) -> T
+      val provider: suspend (di: DependencyInjection) -> T,
   )
 
   inline fun <reified T : Any> register(block: RegisterBuilder<T>.() -> Unit) {
@@ -62,7 +62,8 @@ class DependencyInjectionBuilder {
           reg.instanceType,
           reg.dependencies,
           reg.priority,
-          reg.provider)
+          reg.provider,
+      )
     }
     return di
   }

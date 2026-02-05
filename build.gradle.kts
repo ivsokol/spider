@@ -6,21 +6,21 @@ import org.jreleaser.gradle.plugin.dsl.deploy.maven.GithubMavenDeployer
 import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenCentralMavenDeployer
 
 plugins {
-  val kotlinVersion = "2.2.20"
+  val kotlinVersion = "2.3.0"
 
   kotlin("jvm") version kotlinVersion
   `java-library`
   `maven-publish`
 
-  id("com.diffplug.spotless") version "7.1.0"
-  id("org.jetbrains.dokka") version "2.0.0"
-  id("org.jetbrains.kotlinx.kover") version "0.9.1"
+  id("com.diffplug.spotless") version "8.2.1"
+  id("org.jetbrains.dokka-javadoc") version "2.1.0"
+  id("org.jetbrains.kotlinx.kover") version "0.9.6"
   id("org.jreleaser") version "1.15.0"
 }
 
 group = "io.github.ivsokol"
 
-version = "1.2.1"
+version = "1.3.0"
 
 repositories {
   mavenLocal()
@@ -30,15 +30,12 @@ repositories {
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.slf4j:slf4j-api:2.0.17")
-  implementation("ch.qos.logback:logback-classic:1.5.20")
-  implementation("org.fusesource.jansi:jansi:2.4.2")
+  runtimeOnly("org.apache.logging.log4j:log4j-core:2.25.3")
+  runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.25.3")
 
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
   testImplementation("io.kotest:kotest-runner-junit5:${project.property("kotestVersion")}")
   testImplementation("io.kotest:kotest-assertions-json-jvm:${project.property("kotestVersion")}")
-  testImplementation("io.kotest:kotest-framework-datatest-jvm:${project.property("kotestVersion")}")
-  testImplementation("io.kotest:kotest-extensions-now-jvm:${project.property("kotestVersion")}")
-  testImplementation(
-      "io.kotest.extensions:kotest-extensions-clock:${project.property("kotestExtClockVersion")}")
 }
 
 tasks.withType<Test>().configureEach {
@@ -48,11 +45,20 @@ tasks.withType<Test>().configureEach {
   reports.html.required.set(false)
 }
 
-tasks.dokkaJavadoc.configure { outputDirectory.set(layout.buildDirectory.dir("docs/javadoc")) }
+val dokkaJavadoc =
+    tasks.named<org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask>(
+        "dokkaGeneratePublicationJavadoc"
+    )
+
+dokka {
+  dokkaPublications.named("javadoc") {
+    outputDirectory.set(layout.buildDirectory.dir("docs/javadoc"))
+  }
+}
 
 tasks.register<Jar>("dokkaJavadocJar") {
-  dependsOn(tasks.dokkaJavadoc)
-  from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+  dependsOn(dokkaJavadoc)
+  from(dokkaJavadoc.flatMap { it.outputDirectory })
   archiveClassifier.set("javadoc")
 }
 
@@ -93,7 +99,8 @@ jreleaser {
           (create("maven-central") as MavenCentralMavenDeployer).apply {
             if (isArtifactPublished(group.toString(), "spider", project.version.toString())) {
               logger.lifecycle(
-                  "Artifact is already published to Maven Central. Skipping 'maven-central' deployment.")
+                  "Artifact is already published to Maven Central. Skipping 'maven-central' deployment."
+              )
               setActive("NEVER")
             } else {
               setActive("ALWAYS")
@@ -150,9 +157,9 @@ publishing {
   repositories { maven { url = uri(layout.buildDirectory.dir("staging-deploy")) } }
 }
 
-tasks.withType<KotlinCompile> { compilerOptions { jvmTarget.set(JvmTarget.JVM_21) } }
+tasks.withType<KotlinCompile> { compilerOptions { jvmTarget.set(JvmTarget.JVM_25) } }
 
-kotlin { jvmToolchain(21) }
+kotlin { jvmToolchain(25) }
 
 project.tasks.getByName("assemble").finalizedBy("spotlessApply")
 

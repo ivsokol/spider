@@ -22,14 +22,14 @@ data class ServiceMetadata(
     val instanceType: InstanceType,
     val dependencies: List<String>,
     val priority: Int,
-    val provider: suspend (di: DependencyInjection) -> Any
+    val provider: suspend (di: DependencyInjection) -> Any,
 )
 
 data class ClassMeta(val name: String, val className: String, val clazz: Class<*>)
 
 enum class InstanceType {
   SINGLETON,
-  FACTORY
+  FACTORY,
 }
 
 interface Destroyable {

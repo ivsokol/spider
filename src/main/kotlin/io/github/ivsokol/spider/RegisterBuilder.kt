@@ -40,5 +40,6 @@ class RegisterBuilder<T : Any> {
           instanceType,
           dependencies,
           priority,
-          sameProvider)
+          sameProvider,
+      )
 }

@@ -39,7 +39,7 @@ class DependencyInjection {
       instanceType: InstanceType = InstanceType.SINGLETON,
       dependencies: List<String>? = null,
       priority: Int = 0,
-      provider: suspend (di: DependencyInjection) -> T
+      provider: suspend (di: DependencyInjection) -> T,
   ) {
     if (isDILocked) throw IllegalStateException("Cannot register new classes when locked")
     logger.debug("Registering instance {} of class {}", classMeta.name, classMeta.className)
@@ -61,7 +61,8 @@ class DependencyInjection {
             instanceType = instanceType,
             dependencies = dependencies ?: emptyList(),
             priority = priority,
-            provider = provider)
+            provider = provider,
+        )
     registry[key] = metadata
 
     applyLocking(key, metadata)
@@ -103,7 +104,8 @@ class DependencyInjection {
     val instance =
         getInstanceFromMetadata(metadata) as? T
             ?: throw IllegalArgumentException(
-                "Class cast to ${T::class.java.name} failed for $name")
+                "Class cast to ${T::class.java.name} failed for $name"
+            )
     return instance
   }
 
@@ -123,7 +125,8 @@ class DependencyInjection {
     val instance =
         getStartedInstanceFromMetadata(metadata) as? T
             ?: throw IllegalArgumentException(
-                "Class cast to ${T::class.java.name} failed for $name")
+                "Class cast to ${T::class.java.name} failed for $name"
+            )
     return instance
   }
 
@@ -140,7 +143,7 @@ class DependencyInjection {
    */
   suspend inline fun <reified T : Any> resolveByNameWithCheck(
       name: String,
-      deps: MutableSet<String>
+      deps: MutableSet<String>,
   ): T {
     if (deps.contains(name)) {
       throw IllegalArgumentException("Circular dependency detected for $name")
@@ -288,7 +291,8 @@ class DependencyInjection {
         } catch (e: Exception) {
           logger.error("Error creating instance {} of class {}", key, metadata.className, e)
           error(
-              "Error creating instance $key of class ${metadata.className} with error: ${e.message}")
+              "Error creating instance $key of class ${metadata.className} with error: ${e.message}"
+          )
         }
       }
     }
@@ -345,17 +349,25 @@ class DependencyInjection {
       logger.debug("Registering at start instance {} of class {}", key, metadata.className)
       if (metadata.dependencies.isNotEmpty() && metadata.instanceType == InstanceType.SINGLETON) {
         logger.debug(
-            "Implicitly locking dependencies for instance {} of class {}", key, metadata.className)
+            "Implicitly locking dependencies for instance {} of class {}",
+            key,
+            metadata.className,
+        )
         lockDependencies(metadata.dependencies)
       }
     }
     // lock dependencies if locked and not created at start
-    if (metadata.isLocked &&
-        metadata.instanceType == InstanceType.SINGLETON &&
-        !metadata.createdAtStart &&
-        metadata.dependencies.isNotEmpty()) {
+    if (
+        metadata.isLocked &&
+            metadata.instanceType == InstanceType.SINGLETON &&
+            !metadata.createdAtStart &&
+            metadata.dependencies.isNotEmpty()
+    ) {
       logger.debug(
-          "Explicitly locking dependencies for instance {} of class {}", key, metadata.className)
+          "Explicitly locking dependencies for instance {} of class {}",
+          key,
+          metadata.className,
+      )
       lockDependencies(metadata.dependencies)
     }
   }
@@ -398,7 +410,8 @@ class DependencyInjection {
       } catch (e: Exception) {
         logger.error("Error creating instance {} of class {}", metadata.name, metadata.className, e)
         error(
-            "Error creating instance ${metadata.name} of class ${metadata.className} with error: ${e.message}")
+            "Error creating instance ${metadata.name} of class ${metadata.className} with error: ${e.message}"
+        )
       }
     }
 
@@ -414,9 +427,14 @@ class DependencyInjection {
           metadata.provider.invoke(this)
         } catch (e: Exception) {
           logger.error(
-              "Error creating instance {} of class {}", metadata.name, metadata.className, e)
+              "Error creating instance {} of class {}",
+              metadata.name,
+              metadata.className,
+              e,
+          )
           error(
-              "Error creating instance ${metadata.name} of class ${metadata.className} with error: ${e.message}")
+              "Error creating instance ${metadata.name} of class ${metadata.className} with error: ${e.message}"
+          )
         }
     instances[metadata.name] = instance to LocalDateTime.now()
     return instance

@@ -245,7 +245,8 @@ class DependencyInjectionTest :
                           FooService(
                               foo = di.resolveByName(Foo::class.java.name),
                               fooRepo = di.resolve(),
-                              value = "value")
+                              value = "value",
+                          )
                         }
                       }
                     }
@@ -289,7 +290,8 @@ class DependencyInjectionTest :
                           FooService(
                               foo = di.resolveByName(FooRepo::class.java.name),
                               fooRepo = di.resolveByName(Foo::class.java.name),
-                              value = "value")
+                              value = "value",
+                          )
                         }
                       }
                     }
@@ -319,7 +321,8 @@ class DependencyInjectionTest :
                             FooService(
                                 foo = di.resolveByName(FooRepo::class.java.name),
                                 fooRepo = di.resolveByName(Foo::class.java.name),
-                                value = "value")
+                                value = "value",
+                            )
                           }
                         }
                       }
@@ -389,7 +392,8 @@ class DependencyInjectionTest :
                           FooService(
                               foo = di.resolveByName(Foo::class.java.name),
                               fooRepo = di.resolve(),
-                              value = "value")
+                              value = "value",
+                          )
                         }
                       }
                     }
@@ -616,9 +620,10 @@ class DependencyInjectionTest :
                     false,
                     InstanceType.FACTORY,
                     emptyList(),
-                    0) {
-                      Foo(Random.nextInt().toString())
-                    }
+                    0,
+                ) {
+                  Foo(Random.nextInt().toString())
+                }
               }
               .message shouldBe "Cannot register new classes when locked"
         }
@@ -641,7 +646,9 @@ class DependencyInjectionTest :
                             instanceType = InstanceType.FACTORY
                             provider = { Foo(Random.nextInt().toString()) }
                           }
-                        }))
+                        }
+                    )
+                )
               }
               .message shouldBe "Cannot register modules when locked"
         }
