@@ -18,7 +18,7 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.3.2"
+version = "1.3.3"
 
 repositories {
   mavenLocal()
@@ -78,6 +78,12 @@ project.tasks.getByName("dokkaJavadocJar").dependsOn("javadoc")
 java {
   withSourcesJar()
   withJavadocJar()
+}
+
+// Ensure javadocJar task depends on dokkaGeneratePublicationJavadoc
+tasks.named<Jar>("javadocJar") {
+  dependsOn(dokkaJavadoc)
+  from(dokkaJavadoc.flatMap { it.outputDirectory })
 }
 
 mavenPublishing {
