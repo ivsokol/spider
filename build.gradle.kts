@@ -1,31 +1,36 @@
-import java.net.HttpURLConnection
-import java.net.URI
+import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jreleaser.gradle.plugin.dsl.deploy.maven.GithubMavenDeployer
-import org.jreleaser.gradle.plugin.dsl.deploy.maven.MavenCentralMavenDeployer
 
 plugins {
   val kotlinVersion = "2.3.0"
 
   kotlin("jvm") version kotlinVersion
   `java-library`
-  `maven-publish`
+  signing
 
   id("com.diffplug.spotless") version "8.2.1"
   id("org.jetbrains.dokka-javadoc") version "2.1.0"
   id("org.jetbrains.kotlinx.kover") version "0.9.6"
-  id("org.jreleaser") version "1.15.0"
+  id("com.vanniktech.maven.publish") version "0.32.0"
+  id("com.github.breadmoirai.github-release") version "2.5.2"
 }
 
 group = "io.github.ivsokol"
 
-version = "1.3.0"
+version = "1.3.1"
 
 repositories {
   mavenLocal()
   mavenCentral()
 }
+
+// Map existing JReleaser environment variables to Vanniktech plugin properties
+ext["mavenCentralUsername"] = System.getenv("MAVEN_USERNAME") ?: ""
+ext["mavenCentralPassword"] = System.getenv("MAVEN_PASSWORD") ?: ""
+ext["signingInMemoryKey"] = System.getenv("GPG_SECRET_KEY") ?: ""
+ext["signingInMemoryKeyId"] = System.getenv("GPG_PUBLIC_KEY")?.takeLast(8) ?: ""
+ext["signingInMemoryKeyPassword"] = System.getenv("GPG_PASSPHRASE") ?: ""
 
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
@@ -66,95 +71,48 @@ project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
 
 project.tasks.getByName("dokkaJavadocJar").dependsOn("javadoc")
 
-project.tasks.getByName("jreleaserFullRelease").dependsOn("publish")
 
 java {
   withSourcesJar()
   withJavadocJar()
 }
 
-jreleaser {
-  project {
-    name = "Spider"
-    description = "Spider - minimal dependency injection framework"
-    inceptionYear = "2025"
-    license = "Apache-2.0"
-    maintainer("Ivan Sokol")
-    links {
-      homepage = "https://ivsokol.github.io/spider"
-      license = "https://opensource.org/licenses/Apache-2.0"
-    }
-    java {
-      groupId = "io.github.ivsokol"
-      artifactId = "spider"
-    }
-    signing {
-      setActive("ALWAYS")
-      armored = true
-    }
-    release { github { overwrite = true } }
-    deploy {
-      maven {
-        mavenCentral {
-          (create("maven-central") as MavenCentralMavenDeployer).apply {
-            if (isArtifactPublished(group.toString(), "spider", project.version.toString())) {
-              logger.lifecycle(
-                  "Artifact is already published to Maven Central. Skipping 'maven-central' deployment."
-              )
-              setActive("NEVER")
-            } else {
-              setActive("ALWAYS")
-            }
-            url = "https://central.sonatype.com/api/v1/publisher"
-            stagingRepository("build/staging-deploy")
-            applyMavenCentralRules = true
-          }
-        }
-        github {
-          (create("github") as GithubMavenDeployer).apply {
-            setActive("ALWAYS")
-            stagingRepository("build/staging-deploy")
-          }
-        }
+mavenPublishing {
+  publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+  signAllPublications()
+
+  coordinates(group.toString(), "spider", version.toString())
+
+  pom {
+    name.set("Spider")
+    description.set(
+        "Spider - minimal dependency injection framework that supports factory and singleton scopes with module and container support"
+    )
+    url.set("https://ivsokol.github.io/spider")
+    inceptionYear.set("2025")
+
+    licenses {
+      license {
+        name.set("The Apache License, Version 2.0")
+        url.set("https://opensource.org/licenses/Apache-2.0")
+        distribution.set("repo")
       }
     }
-  }
-}
 
-publishing {
-  publications {
-    create<MavenPublication>("mavenKotlin") {
-      groupId = "io.github.ivsokol"
-      artifactId = "spider"
-      version = project.version.toString()
-      from(components["java"])
-
-      pom {
-        name = "Spider"
-        description =
-            "Spider - minimal dependency injection framework that supports factory and singleton scopes with module and container support"
-        url = "https://ivsokol.github.io/spider"
-        licenses {
-          license {
-            name = "The Apache License, Version 2.0"
-            url = "https://opensource.org/licenses/Apache-2.0"
-          }
-        }
-        developers {
-          developer {
-            id = "ivsokol"
-            name = "Ivan Sokol"
-            email = "ivan.sokol@gmail.com"
-          }
-        }
-        scm {
-          connection = "scm:git:https://ivsokol.github.io/spider.git"
-          url = "https://ivsokol.github.io/spider"
-        }
+    developers {
+      developer {
+        id.set("ivsokol")
+        name.set("Ivan Sokol")
+        email.set("ivan.sokol@gmail.com")
       }
     }
+
+    scm {
+      url.set("https://github.com/ivsokol/spider")
+      connection.set("scm:git:git://github.com/ivsokol/spider.git")
+      developerConnection.set("scm:git:ssh://git@github.com/ivsokol/spider.git")
+    }
   }
-  repositories { maven { url = uri(layout.buildDirectory.dir("staging-deploy")) } }
 }
 
 tasks.withType<KotlinCompile> { compilerOptions { jvmTarget.set(JvmTarget.JVM_25) } }
@@ -177,22 +135,45 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 
 kover.reports.verify.rule { minBound(90) }
 
-fun isArtifactPublished(groupId: String, artifactId: String, version: String): Boolean {
-  if (version.endsWith("SNAPSHOT")) return false
-  return try {
-    val url = URI("https://central.sonatype.com/artifact/$groupId/$artifactId/$version").toURL()
-    with(url.openConnection() as HttpURLConnection) {
-      requestMethod = "GET"
-      connectTimeout = 5000
-      readTimeout = 5000
-      if (responseCode == 200) {
-        val response = inputStream.bufferedReader().use { it.readText() }
-        !response.contains("NEXT_HTTP_ERROR_FALLBACK;404")
-      } else {
-        false
-      }
-    }
-  } catch (_: Exception) {
-    false
-  }
+// GitHub Release configuration
+githubRelease {
+  token(System.getenv("JRELEASER_GITHUB_TOKEN") ?: "")
+  owner.set("ivsokol")
+  repo.set("spider")
+  tagName.set("v${version}")
+  releaseName.set("Spider v${version}")
+  targetCommitish.set("main")
+  body.set("""
+        ## Spider v${version}
+        
+        Minimal dependency injection framework for Kotlin.
+        
+        ### Maven Central
+        ```xml
+        <dependency>
+            <groupId>io.github.ivsokol</groupId>
+            <artifactId>spider</artifactId>
+            <version>${version}</version>
+        </dependency>
+        ```
+        
+        ### Gradle Kotlin DSL
+        ```kotlin
+        implementation("io.github.ivsokol:spider:${version}")
+        ```
+    """.trimIndent())
+  overwrite.set(true)
+  allowUploadToExisting.set(true)
+  releaseAssets(
+      tasks.named("jar").map { it.outputs.files },
+      tasks.named("sourcesJar").map { it.outputs.files },
+      tasks.named("dokkaJavadocJar").map { it.outputs.files }
+  )
 }
+
+// Ensure GitHub release task runs after build
+tasks.named("githubRelease") {
+  dependsOn("build", "sourcesJar", "dokkaJavadocJar")
+}
+
+
