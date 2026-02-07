@@ -1,4 +1,4 @@
-import com.vanniktech.maven.publish.SonatypeHost
+import com.vanniktech.maven.publish.DeploymentValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -12,13 +12,13 @@ plugins {
   id("com.diffplug.spotless") version "8.2.1"
   id("org.jetbrains.dokka-javadoc") version "2.1.0"
   id("org.jetbrains.kotlinx.kover") version "0.9.6"
-  id("com.vanniktech.maven.publish") version "0.32.0"
+  id("com.vanniktech.maven.publish") version "0.36.0"
   id("com.github.breadmoirai.github-release") version "2.5.2"
 }
 
 group = "io.github.ivsokol"
 
-version = "1.3.4"
+version = "1.3.5"
 
 repositories {
   mavenLocal()
@@ -31,8 +31,6 @@ ext["mavenCentralUsername"] = System.getenv("MAVEN_USERNAME") ?: ""
 ext["mavenCentralPassword"] = System.getenv("MAVEN_PASSWORD") ?: ""
 
 ext["signingInMemoryKey"] = System.getenv("GPG_SECRET_KEY") ?: ""
-
-ext["signingInMemoryKeyId"] = System.getenv("GPG_PUBLIC_KEY")?.takeLast(8) ?: ""
 
 ext["signingInMemoryKeyPassword"] = System.getenv("GPG_PASSPHRASE") ?: ""
 
@@ -66,10 +64,13 @@ dokka {
   }
 }
 
-tasks.register<Jar>("dokkaJavadocJar") {
-  dependsOn(dokkaJavadoc)
-  from(dokkaJavadoc.flatMap { it.outputDirectory })
-  archiveClassifier.set("javadoc")
+// Configure dokkaJavadocJar if it is created by plugins (e.g. vanniktech maven publish)
+tasks.withType<Jar>().configureEach {
+  if (name == "dokkaJavadocJar") {
+    dependsOn(dokkaJavadoc)
+    from(dokkaJavadoc.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
+  }
 }
 
 project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
@@ -89,7 +90,10 @@ tasks.named<Jar>("javadocJar") {
 tasks.matching { it.name == "mavenDokkaJavadocJar" }.configureEach { dependsOn(dokkaJavadoc) }
 
 mavenPublishing {
-  publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+  publishToMavenCentral(
+      automaticRelease = true,
+      validateDeployment = DeploymentValidation.PUBLISHED,
+  )
   signAllPublications()
 
   coordinates(group.toString(), "spider", version.toString())
@@ -181,7 +185,7 @@ githubRelease {
   releaseAssets(
       tasks.named("jar").map { it.outputs.files },
       tasks.named("sourcesJar").map { it.outputs.files },
-      tasks.named("dokkaJavadocJar").map { it.outputs.files },
+      provider { tasks.findByName("dokkaJavadocJar")?.outputs?.files ?: layout.files() },
   )
 }
 
