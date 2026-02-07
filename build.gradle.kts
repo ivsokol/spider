@@ -18,21 +18,12 @@ plugins {
 
 group = "io.github.ivsokol"
 
-version = "1.3.5"
+version = "1.3.6"
 
 repositories {
   mavenLocal()
   mavenCentral()
 }
-
-// Map existing JReleaser environment variables to Vanniktech plugin properties
-ext["mavenCentralUsername"] = System.getenv("MAVEN_USERNAME") ?: ""
-
-ext["mavenCentralPassword"] = System.getenv("MAVEN_PASSWORD") ?: ""
-
-ext["signingInMemoryKey"] = System.getenv("GPG_SECRET_KEY") ?: ""
-
-ext["signingInMemoryKeyPassword"] = System.getenv("GPG_PASSPHRASE") ?: ""
 
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
