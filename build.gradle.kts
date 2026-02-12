@@ -50,12 +50,10 @@ val dokkaJavadoc =
 
 dokka {
   dokkaPublications.named("javadoc") {
-    // Use a separate directory for dokka output to avoid conflicts with javadoc task
     outputDirectory.set(layout.buildDirectory.dir("docs/dokka-javadoc"))
   }
 }
 
-// Configure dokkaJavadocJar if it is created by plugins (e.g. vanniktech maven publish)
 tasks.withType<Jar>().configureEach {
   if (name == "dokkaJavadocJar") {
     dependsOn(dokkaJavadoc)
@@ -66,18 +64,8 @@ tasks.withType<Jar>().configureEach {
 
 project.tasks.getByName("jar").dependsOn("dokkaJavadocJar")
 
-java {
-  withSourcesJar()
-  withJavadocJar()
-}
+java { withSourcesJar() }
 
-// Ensure javadocJar task uses dokka output and has proper dependencies
-tasks.named<Jar>("javadocJar") {
-  dependsOn(dokkaJavadoc)
-  from(dokkaJavadoc.flatMap { it.outputDirectory })
-}
-
-// Configure mavenDokkaJavadocJar to depend on dokka task
 tasks.matching { it.name == "mavenDokkaJavadocJar" }.configureEach { dependsOn(dokkaJavadoc) }
 
 mavenPublishing {
@@ -141,9 +129,13 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 
 kover.reports.verify.rule { minBound(90) }
 
-// GitHub Release configuration
 githubRelease {
-  token(System.getenv("JRELEASER_GITHUB_TOKEN") ?: "")
+  token(
+      System.getenv("JRELEASER_GITHUB_TOKEN")
+          ?: project.findProperty("jreleaserGithubToken")?.toString()
+          ?: ""
+  )
+
   owner.set("ivsokol")
   repo.set("spider")
   tagName.set("v${version}")
@@ -180,5 +172,4 @@ githubRelease {
   )
 }
 
-// Ensure GitHub release task runs after build
 tasks.named("githubRelease") { dependsOn("build", "sourcesJar", "dokkaJavadocJar") }
